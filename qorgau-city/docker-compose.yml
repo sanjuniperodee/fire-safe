@@ -164,7 +164,7 @@ services:
     hostname: "frontend"
     restart: on-failure
     ports:
-      - "87:87"
+      - "87:80"
     networks:
       - backend
     depends_on:
