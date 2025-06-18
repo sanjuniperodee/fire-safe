@@ -4,16 +4,31 @@
 
 ### 1. Ошибки Docker Compose
 
-#### Проблема: "Unsupported config option"
+#### Проблема: "Unsupported config option" или "Version is unsupported"
 ```
 ERROR: The Compose file './docker-compose.yml' is invalid because:
 Unsupported config option for services: 'celery_beat'
 ```
+или
+```
+ERROR: Version in "./docker-compose.yml" is unsupported
+```
 
-**Решение:**
-- Убедитесь, что используете Docker Compose версии 1.27+ или 2.0+
+**Решения:**
+
+1. **Используйте умный скрипт развертывания (рекомендуется):**
+```bash
+./deploy-auto.sh  # Автоматически выберет правильную версию
+```
+
+2. **Используйте legacy версию для старых Docker Compose:**
+```bash
+docker-compose -f docker-compose-legacy.yml up -d
+```
+
+3. **Обновите Docker Compose:**
 - Проверьте версию: `docker-compose --version`
-- Обновите Docker Compose если нужно
+- Обновите до версии 1.27+ или 2.0+
 
 #### Проблема: Контейнеры не запускаются
 ```bash

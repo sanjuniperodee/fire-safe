@@ -6,6 +6,16 @@
 
 ### Автоматическое развертывание (Рекомендуется)
 
+**Умный скрипт (Linux/macOS) - Автоматически выбирает правильную версию:**
+```bash
+git clone https://github.com/sanjuniperodee/fire-safe.git
+cd fire-safe
+chmod +x deploy-auto.sh
+./deploy-auto.sh
+```
+
+**Стандартные скрипты:**
+
 **Linux/macOS:**
 ```bash
 git clone https://github.com/sanjuniperodee/fire-safe.git
@@ -20,6 +30,11 @@ git clone https://github.com/sanjuniperodee/fire-safe.git
 cd fire-safe
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 .\deploy.ps1
+```
+
+**Для старых версий Docker Compose:**
+```bash
+docker-compose -f docker-compose-legacy.yml up -d
 ```
 
 ### Ручное развертывание
