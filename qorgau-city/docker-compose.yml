@@ -14,7 +14,7 @@ services:
     networks:
       - backend
     ports:
-      - "5432:5432"
+      - "5017:5432"
 
   redis_backend:
     container_name: redis_backend
