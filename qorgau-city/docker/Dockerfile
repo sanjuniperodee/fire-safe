@@ -36,4 +36,4 @@ COPY src $ROOT
 # Обновление pip
 RUN pip install --upgrade pip &&  pip install -r requirements.txt
 
-EXPOSE 3000
+EXPOSE 2999
