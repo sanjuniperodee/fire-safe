@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # PostgreSQL Database
   db:
@@ -59,8 +61,8 @@ services:
       exit 0;
       "
 
-  # Django Backend (HTTP API)
-  app_backend:
+  # Django Backend (HTTP API) - renamed to 'web' for deploy scripts
+  web:
     build:
       context: ./qorgau-city
       dockerfile: docker/Dockerfile
@@ -74,10 +76,10 @@ services:
       - MINIO_SECRET_KEY=minioadmin123
       - MINIO_USE_SSL=False
       - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
-      - CORS_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
+      - CORS_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080,http://localhost:3000
       - SMS_ENABLED=False
     ports:
-      - "3000:8000"
+      - "8000:8000"
     volumes:
       - ./qorgau-city/src:/code
       - static_volume:/code/staticfiles
@@ -93,6 +95,7 @@ services:
     command: >
       sh -c "
       echo '🔄 Waiting for database...'
+      sleep 10
       python manage.py migrate --noinput
       echo '📋 Running collectstatic...'
       python manage.py collectstatic --noinput
@@ -115,22 +118,22 @@ services:
       - MINIO_SECRET_KEY=minioadmin123
       - MINIO_USE_SSL=False
       - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
-      - CORS_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
+      - CORS_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080,http://localhost:3000
     ports:
-      - "3001:8001"
+      - "8001:8001"
     volumes:
       - ./qorgau-city/src:/code
     depends_on:
       - db
       - redis
-      - app_backend
+      - web
     networks:
       - qorgau_network
     restart: unless-stopped
     command: >
       sh -c "
       echo '🔄 Waiting for main backend...'
-      sleep 10
+      sleep 15
       echo '📡 Starting WebSocket server on port 8001...'
       daphne -b 0.0.0.0 -p 8001 settings.asgi:application
       "
@@ -154,7 +157,7 @@ services:
     depends_on:
       - db
       - redis
-      - app_backend
+      - web
     networks:
       - qorgau_network
     restart: unless-stopped
@@ -179,7 +182,7 @@ services:
     depends_on:
       - db
       - redis
-      - app_backend
+      - web
     networks:
       - qorgau_network
     restart: unless-stopped
@@ -191,9 +194,9 @@ services:
       context: ./qorgau-city-front
       dockerfile: Dockerfile
     ports:
-      - "8080:80"
+      - "3000:80"
     depends_on:
-      - app_backend
+      - web
     networks:
       - qorgau_network
     restart: unless-stopped
