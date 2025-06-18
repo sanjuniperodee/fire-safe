@@ -1,0 +1,210 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: qorgau_city
+      POSTGRES_USER: qorgau_user
+      POSTGRES_PASSWORD: qorgau_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - qorgau_network
+    restart: unless-stopped
+
+  # Redis for caching and Celery
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - qorgau_network
+    restart: unless-stopped
+
+  # MinIO S3 Storage
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - qorgau_network
+    restart: unless-stopped
+
+  # MinIO Client for bucket initialization
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    networks:
+      - qorgau_network
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc config host add local http://minio:9000 minioadmin minioadmin123) do echo '...waiting...' && sleep 1; done;
+      /usr/bin/mc mb local/isec --ignore-existing;
+      /usr/bin/mc mb local/public --ignore-existing;
+      /usr/bin/mc mb local/static --ignore-existing;
+      /usr/bin/mc anonymous set public local/public;
+      /usr/bin/mc anonymous set public local/static;
+      exit 0;
+      "
+
+  # Django Backend (HTTP API)
+  app_backend:
+    build:
+      context: ./qorgau-city
+      dockerfile: docker/Dockerfile
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=your-secret-key-here-change-in-production
+      - DATABASE_URL=postgresql://qorgau_user:qorgau_password@db:5432/qorgau_city
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin123
+      - MINIO_USE_SSL=False
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+      - CORS_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
+      - SMS_ENABLED=False
+    ports:
+      - "3000:8000"
+    volumes:
+      - ./qorgau-city/src:/code
+      - static_volume:/code/staticfiles
+      - media_volume:/code/media
+    depends_on:
+      - db
+      - redis
+      - minio
+      - minio-init
+    networks:
+      - qorgau_network
+    restart: unless-stopped
+    command: >
+      sh -c "
+      echo '🔄 Waiting for database...'
+      python manage.py migrate --noinput
+      echo '📋 Running collectstatic...'
+      python manage.py collectstatic --noinput
+      echo '🚀 Starting Django server on port 8000...'
+      python manage.py runserver 0.0.0.0:8000
+      "
+
+  # WebSocket Server for Chat
+  websocket_server:
+    build:
+      context: ./qorgau-city
+      dockerfile: docker/Dockerfile
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=your-secret-key-here-change-in-production
+      - DATABASE_URL=postgresql://qorgau_user:qorgau_password@db:5432/qorgau_city
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin123
+      - MINIO_USE_SSL=False
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+      - CORS_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
+    ports:
+      - "3001:8001"
+    volumes:
+      - ./qorgau-city/src:/code
+    depends_on:
+      - db
+      - redis
+      - app_backend
+    networks:
+      - qorgau_network
+    restart: unless-stopped
+    command: >
+      sh -c "
+      echo '🔄 Waiting for main backend...'
+      sleep 10
+      echo '📡 Starting WebSocket server on port 8001...'
+      daphne -b 0.0.0.0 -p 8001 settings.asgi:application
+      "
+
+  # Celery Worker
+  celery_worker:
+    build:
+      context: ./qorgau-city
+      dockerfile: docker/Dockerfile
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=your-secret-key-here-change-in-production
+      - DATABASE_URL=postgresql://qorgau_user:qorgau_password@db:5432/qorgau_city
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin123
+      - MINIO_USE_SSL=False
+    volumes:
+      - ./qorgau-city/src:/code
+    depends_on:
+      - db
+      - redis
+      - app_backend
+    networks:
+      - qorgau_network
+    restart: unless-stopped
+    command: celery -A settings worker --loglevel=info
+
+  # Celery Beat (Scheduler)
+  celery_beat:
+    build:
+      context: ./qorgau-city
+      dockerfile: docker/Dockerfile
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=your-secret-key-here-change-in-production
+      - DATABASE_URL=postgresql://qorgau_user:qorgau_password@db:5432/qorgau_city
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin123
+      - MINIO_USE_SSL=False
+    volumes:
+      - ./qorgau-city/src:/code
+    depends_on:
+      - db
+      - redis
+      - app_backend
+    networks:
+      - qorgau_network
+    restart: unless-stopped
+    command: celery -A settings beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+  # Vue.js Frontend
+  frontend:
+    build:
+      context: ./qorgau-city-front
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - app_backend
+    networks:
+      - qorgau_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  static_volume:
+  media_volume:
+
+networks:
+  qorgau_network:
+    driver: bridge 
