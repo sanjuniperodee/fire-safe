@@ -13,8 +13,8 @@ RUN npm install --legacy-peer-deps
 COPY . .
 
 # Set environment variables for build
-ENV VITE_API_BASE_URL=http://localhost:3000/api/v1
-ENV VITE_WEBSOCKET_URL=ws://localhost:3001
+ENV VITE_API_BASE_URL=http://localhost:2999/api/v1
+ENV VITE_WEBSOCKET_URL=ws://localhost:2998
 
 # Build the application
 RUN npm run build

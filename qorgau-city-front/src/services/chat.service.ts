@@ -4,11 +4,8 @@ import type { ChatLoginValidator, ChatRooms, ChatRoomType, Message, SendMessage,
 import { useChatStore } from '@stores/ChatStore'
 
 // Используем локальный API вместо внешнего
-const API_URL = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'}/api/v1/statements/response/call`;
-const API_CHAT = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
-const SOCKET_URL = `ws://localhost:3001`;
-
-const connectionMap = new Map();
+const SOCKET_URL = `ws://localhost:2998`;
+new Map();
 // const MAX_CONNECTIONS_PER_INTERVAL = 2;
 // const INTERVAL_MS = 600; // 1 минута
 // const RECONNECT_TIMEOUT_MS = 100; // 10 секунд
@@ -266,4 +263,4 @@ class ChatWebSocketService {
 
 
 
-export const chatWebSocketService = new ChatWebSocketService(import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000');
+export const chatWebSocketService = new ChatWebSocketService('http://localhost:2998');

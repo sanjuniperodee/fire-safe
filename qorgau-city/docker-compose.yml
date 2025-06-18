@@ -80,7 +80,7 @@ services:
     env_file:
       - ./docker/.env
     ports:
-      - "3000:3000"
+      - "2999:2999"
     volumes:
       - ./src:/code:rw
       - ./src/static:/code/static:rw
@@ -109,11 +109,11 @@ services:
     image: backend
     hostname: "websocket_server"
     restart: on-failure
-    command: "daphne -b 0.0.0.0 -p 3001 settings.asgi:application"
+    command: "daphne -b 0.0.0.0 -p 2998 settings.asgi:application"
     env_file:
       - ./docker/.env
     ports:
-      - "3001:3001"
+      - "2998:2998"
     volumes:
       - ./src:/code:rw
     networks:
