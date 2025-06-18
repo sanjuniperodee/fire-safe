@@ -156,6 +156,20 @@ services:
       - redis_backend
       - celery_worker
 
+  frontend:
+    container_name: frontend
+    build:
+      context: ../qorgau-city-front
+      dockerfile: Dockerfile
+    hostname: "frontend"
+    restart: on-failure
+    ports:
+      - "80:80"
+    networks:
+      - backend
+    depends_on:
+      - app_backend
+
 volumes:
   postgres_data:
 
