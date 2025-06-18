@@ -75,7 +75,7 @@ services:
         echo '📋 Running collectstatic...' &&
         python manage.py collectstatic --noinput &&
         echo '🌐 Starting Django server...' &&
-        python manage.py runserver 0.0.0.0:3000
+        python manage.py runserver 0.0.0.0:2999
       "
     env_file:
       - ./docker/.env

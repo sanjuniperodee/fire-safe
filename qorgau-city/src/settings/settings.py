@@ -22,6 +22,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://192.168.1.4:3000',
     'http://localhost:3000',
     'http://localhost:5173',
+    'http://localhost:87',
     'https://www.qorgau-city.kz',
     'http://www.qorgau-city.kz',
     'https://qorgau-city.kz',
