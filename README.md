@@ -4,6 +4,26 @@
 
 ## 🚀 Быстрый запуск
 
+### Автоматическое развертывание (Рекомендуется)
+
+**Linux/macOS:**
+```bash
+git clone https://github.com/sanjuniperodee/fire-safe.git
+cd fire-safe
+chmod +x deploy.sh
+./deploy.sh
+```
+
+**Windows PowerShell:**
+```powershell
+git clone https://github.com/sanjuniperodee/fire-safe.git
+cd fire-safe
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+.\deploy.ps1
+```
+
+### Ручное развертывание
+
 ### 1. Клонирование репозитория
 ```bash
 git clone https://github.com/sanjuniperodee/fire-safe.git
