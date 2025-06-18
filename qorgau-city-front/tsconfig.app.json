@@ -1,0 +1,37 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "include": [
+    "./src/**/*.ts",
+    "./src/**/*.json",
+    "./env.d.ts",
+    "./src/**/*.vue",
+    "./src/stores/*.ts",
+    "./src/components/views/Objects/objects-owner/pages-with-params/object-owner-edit/forms/steps/utils/editFunctions.ts"
+  ],
+  "exclude": [
+    "src/**/*.vue.js"
+  ],
+  "files": [
+    "./src/types/ObjectBuilding.ts",
+    "./src/utils/LongFormsStorage.ts",
+    "./src/components/views/Chat/ChatView.vue",
+    "./src/types/Provider.ts"
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@assets/*": ["./src/assets/*"],
+      "@components/*": ["./src/components/*"],
+      "@styles/*": ["./src/assets/scss/*"],
+      "@stores/*": ["./src/stores/*"],
+      "@types/*": ["./src/types/*"],
+      "@locales/*": ["./src/locales/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@helpers/*": ["./src/helpers/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@views/*": ["./src/components/views/*"]
+    }
+  }
+}

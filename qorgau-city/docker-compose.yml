@@ -1,0 +1,164 @@
+version: "3.0"
+
+
+services:
+  database_backend:
+    container_name: database_backend
+    image: postgres:16.0-alpine
+    hostname: "database_backend"
+    restart: on-failure
+    volumes:
+      - postgres_data:/var/lib/postgresql-core/data/
+    env_file:
+      - ./docker/.env
+    networks:
+      - backend
+    ports:
+      - "5432:5432"
+
+  redis_backend:
+    container_name: redis_backend
+    hostname: "redis_backend"
+    restart: always
+    image: redis:alpine
+    networks:
+      - backend
+    ports:
+      - "6380:6380"
+
+  minio:
+    image: minio/minio:latest
+    hostname: "minio"
+    networks:
+      - backend
+    volumes:
+      - ./minio_s3:/minio_files
+    env_file:
+      - docker/.env
+    command: 'minio server /minio_files --console-address ":9001"'
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  createbuckets:
+    image: minio/mc
+    networks:
+      - backend
+    depends_on:
+      - minio
+    links:
+      - minio
+    env_file:
+      - docker/.env
+    entrypoint: /bin/sh -c "
+      /usr/bin/mc config host add minio https://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb --quiet minio/isec;
+      /usr/bin/mc mb --quiet minio/public;
+      /usr/bin/mc mb --quiet minio/static;
+      /usr/bin/mc policy set private minio/isec;
+      /usr/bin/mc policy set public minio/public;
+      /usr/bin/mc policy set public minio/static;"
+
+  app_backend:
+    container_name: app_backend
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    tty: true
+    image: backend
+    hostname: "app_backend"
+    restart: on-failure
+    command: >
+      sh -c "
+        echo '🚀 Starting application...' &&
+        python manage.py migrate &&
+        echo '📋 Running collectstatic...' &&
+        python manage.py collectstatic --noinput &&
+        echo '🌐 Starting Django server...' &&
+        python manage.py runserver 0.0.0.0:3000
+      "
+    env_file:
+      - ./docker/.env
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src:/code:rw
+      - ./src/static:/code/static:rw
+    networks:
+      - backend
+    depends_on:
+      - database_backend
+      - redis_backend
+      - minio
+      - createbuckets
+      - celery_worker
+      - celery_beat
+    links:
+      - database_backend
+      - redis_backend
+      - minio
+    extra_hosts:
+      - "localhost:172.17.0.1"
+
+  websocket_server:
+    container_name: websocket_server
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    tty: true
+    image: backend
+    hostname: "websocket_server"
+    restart: on-failure
+    command: "daphne -b 0.0.0.0 -p 3001 settings.asgi:application"
+    env_file:
+      - ./docker/.env
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./src:/code:rw
+    networks:
+      - backend
+    depends_on:
+      - database_backend
+      - redis_backend
+    links:
+      - database_backend
+      - redis_backend
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: celery -A settings worker -l info
+    volumes:
+      - ./src:/code:rw
+    env_file:
+      - ./docker/.env
+    networks:
+      - backend
+    depends_on:
+      - database_backend
+      - redis_backend
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: celery -A settings beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - ./src:/code:rw
+    env_file:
+      - ./docker/.env
+    networks:
+      - backend
+    depends_on:
+      - database_backend
+      - redis_backend
+      - celery_worker
+
+volumes:
+  postgres_data:
+
+networks:
+  backend:
+    driver: bridge

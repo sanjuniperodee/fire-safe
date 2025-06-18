@@ -1,0 +1,12 @@
+- поменять building и building_coordinates на snake_case ? [done]
+- добавить functional_purpose в building (building and building_info) [done]
+- разделить rating и fire_resistance_rating (это не одно и тоже). fire_resistance_rating nullable (building and building_info) [done]
+- добавить faqs [done]
+- сделать owner_of_object как поле стринг (building и building_info) [done]
+- убрать object_organization как поле, это у нас поле option. (либо переименовать поле option в object_organization) (building and building_info) [done]
+- forgot password убрать права (забыли пароль должен быть доступным для всех кто ввел код) [done]
+- сделать гет ендпоинт тела обьекта документа [done]
+
+
+- добавить crone job для проверки если инспектор ответил на заявление/жалобу
+- добавить crone job 
