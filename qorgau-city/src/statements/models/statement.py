@@ -4,6 +4,7 @@ import auths.validators as a_validators
 from auths.models import Category
 from helpers.models import TimestampMixin
 from .base import User
+from statements import StatementStatus
 
 
 class Statement(TimestampMixin, models.Model):
@@ -39,6 +40,12 @@ class Statement(TimestampMixin, models.Model):
     )
     max_price = models.PositiveBigIntegerField(
         'Максимальная цена',
+    )
+    status = models.CharField(
+        'статус заявки',
+        max_length=20,
+        choices=StatementStatus.choices,
+        default=StatementStatus.OPENED
     )
     is_active = models.BooleanField(
         'Статус',

@@ -51,9 +51,9 @@ class StatementProviderSerializer(serializers.ModelSerializer):
         statement = validated_data.get('statement')
         provider = validated_data.get('provider')
 
-        # Check if statement exists and is active
-        if not statement.is_active:
-            raise ValidationError("Нельзя добавить поставщика к неактивной заявке.")
+        # Check if statement exists and is not archived
+        if statement.status == StatementStatus.ARCHIVED:
+            raise ValidationError("Нельзя добавить поставщика к архивированной заявке.")
 
         with transaction.atomic():
             statement_provider = StatementProvider.objects.create(**validated_data)
