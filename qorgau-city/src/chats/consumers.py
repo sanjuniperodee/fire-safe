@@ -4,8 +4,12 @@ from channels.db import database_sync_to_async
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import UntypedToken
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.tokens import AccessToken
 from .models import ChatRoom, Message, MessageAttachment
 from .serializers import MessageSerializer
+import jwt
+from django.conf import settings
 
 User = get_user_model()
 
@@ -17,12 +21,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.user = await self.get_user_from_token()
         
         if not self.user or self.user.is_anonymous:
+            print(f"User authentication failed for room {self.room_id}")
             await self.close()
             return
         
         # Проверить доступ к комнате
         has_access = await self.check_room_access()
         if not has_access:
+            print(f"User {self.user.id} has no access to room {self.room_id}")
             await self.close()
             return
         
@@ -32,6 +38,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
         
+        print(f"User {self.user.id} connected to room {self.room_id}")
         await self.accept()
     
     async def disconnect(self, close_code):
@@ -40,6 +47,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
+        print(f"User disconnected from room {self.room_id}")
     
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
@@ -85,20 +93,57 @@ class ChatConsumer(AsyncWebsocketConsumer):
                             break
             
             if not token_param:
+                print("No token found in query parameters")
                 return None
             
-            # Убрать префикс "Token " если есть
-            if token_param.startswith('Token%20'):
-                token_param = token_param[8:]  # len('Token%20') = 8
+            # Убрать URL encoding если есть
+            import urllib.parse
+            token_param = urllib.parse.unquote(token_param)
             
-            # Проверить токен
+            # Убрать префикс "Bearer " если есть
+            if token_param.startswith('Bearer '):
+                token_param = token_param[7:]
+            
+            print(f"Attempting to decode token: {token_param[:50]}...")
+            
             try:
-                UntypedToken(token_param)
-                # Для простоты возвращаем первого пользователя
-                # В продакшн нужно декодировать токен и получить реального пользователя
-                return User.objects.first()
-            except (InvalidToken, TokenError):
-                return None
+                # Используем SIMPLE_JWT для декодирования токена
+                from rest_framework_simplejwt.tokens import AccessToken
+                
+                # Создаем объект токена
+                access_token = AccessToken(token_param)
+                user_id = access_token['user_id']
+                
+                if user_id:
+                    user = User.objects.get(id=user_id)
+                    print(f"Successfully authenticated user: {user.phone}")
+                    return user
+                else:
+                    print("No user_id found in token")
+                    return None
+                    
+            except Exception as token_error:
+                print(f"Token validation error: {token_error}")
+                # Fallback: try manual decoding with SECRET_KEY
+                try:
+                    decoded_token = jwt.decode(
+                        token_param, 
+                        settings.SECRET_KEY, 
+                        algorithms=['HS256']
+                    )
+                    user_id = decoded_token.get('user_id')
+                    
+                    if user_id:
+                        user = User.objects.get(id=user_id)
+                        print(f"Successfully authenticated user with fallback: {user.phone}")
+                        return user
+                    else:
+                        print("No user_id found in fallback token")
+                        return None
+                        
+                except Exception as fallback_error:
+                    print(f"Fallback token validation also failed: {fallback_error}")
+                    return None
                 
         except Exception as e:
             print(f"Error getting user from token: {e}")
@@ -109,10 +154,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         """Проверить доступ пользователя к комнате"""
         try:
             chat_room = ChatRoom.objects.get(id=self.room_id)
-            return (chat_room.initiator == self.user or 
-                    chat_room.receiver == self.user or
-                    self.user.is_staff)
+            has_access = (chat_room.initiator == self.user or 
+                         chat_room.receiver == self.user or
+                         self.user.is_staff)
+            print(f"Room access check for user {self.user.id}: {has_access}")
+            return has_access
         except ChatRoom.DoesNotExist:
+            print(f"ChatRoom {self.room_id} does not exist")
             return False
     
     @database_sync_to_async

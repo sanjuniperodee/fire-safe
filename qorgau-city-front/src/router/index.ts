@@ -225,7 +225,7 @@ const router = createRouter({
     {
       path: '/faq',
       name: 'Faq',
-      component: () => import('@views/Faq/FaqView.vue'),
+      component: () => import('@views/Chat/ChatView.vue'),
       meta: {
         requiresAuth: true
       }

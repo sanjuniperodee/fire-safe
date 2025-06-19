@@ -14,7 +14,7 @@ class ChatWebSocketService {
   private socket: WebSocket | null = null;
   private chatUrl: string;
   private chatToken: string | null;
-
+  private setupMessageHandling!: () => void;
 
   
   constructor(chatUrl: string) {
@@ -34,66 +34,105 @@ class ChatWebSocketService {
   }
 
   connect(roomId: number) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       console.log('WebSocket already connected');
       resolve(true);
       return;
     }
 
-    // Пробуем разные форматы токена
-    let wsUrl = `${SOCKET_URL}/ws/chat/${roomId}/?token=${this.chatToken}`;
-    
-    console.log('Attempting WebSocket connection to:', wsUrl);
-    this.socket = new WebSocket(wsUrl);
+    const tryConnection = (tokenFormat: string, description: string) => {
+      return new Promise<boolean>((resolveAttempt) => {
+        console.log(`${description}: ${tokenFormat.substring(0, 100)}...`);
+        
+        this.socket = new WebSocket(tokenFormat);
 
-    this.socket.onopen = () => {
-      console.log("Connected to WebSocket");
-      resolve(true);
+        const timeout = setTimeout(() => {
+          if (this.socket?.readyState === WebSocket.CONNECTING) {
+            console.log(`${description} - Connection timeout`);
+            this.socket.close();
+            resolveAttempt(false);
+          }
+        }, 5000);
+
+        this.socket.onopen = () => {
+          clearTimeout(timeout);
+          console.log(`Connected to WebSocket with ${description}`);
+          this.setupMessageHandling();
+          resolveAttempt(true);
+        };
+
+        this.socket.onerror = (error) => {
+          clearTimeout(timeout);
+          console.error(`WebSocket Error with ${description}:`, error);
+          resolveAttempt(false);
+        };
+
+        this.socket.onclose = (event) => {
+          clearTimeout(timeout);
+          console.log(`WebSocket closed with ${description}:`, event.code, event.reason);
+          resolveAttempt(false);
+        };
+      });
     };
 
-    this.socket.onerror = (error) => {
-      console.error("WebSocket Error:", error);
-      console.log('WebSocket readyState:', this.socket?.readyState);
+    const setupMessageHandling = () => {
+      if (this.socket) {
+        this.socket.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          const chatStore = useChatStore()
+          if (data.attachments && data.attachments.length > 0) {
+            chatStore.message = {
+              ...data,
+              attachments: data.attachments
+            };
+          } else {
+            chatStore.message = data;
+          }
+        };
+      }
+    };
+
+    this.setupMessageHandling = setupMessageHandling;
+
+    // Попробуем разные форматы токенов
+    const connectionAttempts = [
+      {
+        url: `${SOCKET_URL}/ws/chat/${roomId}/?token=${this.chatToken}`,
+        desc: "Direct token"
+      },
+      {
+        url: `${SOCKET_URL}/ws/chat/${roomId}/?token=Bearer%20${this.chatToken}`,
+        desc: "Bearer token (URL encoded)"
+      },
+      {
+        url: `${SOCKET_URL}/ws/chat/${roomId}/?token=Bearer ${this.chatToken}`,
+        desc: "Bearer token"
+      },
+      {
+        url: `${SOCKET_URL}/ws/chat/${roomId}/?authorization=${this.chatToken}`,
+        desc: "Authorization parameter"
+      }
+    ];
+
+    // Попробуем подключения последовательно
+    const tryConnections = async () => {
+      for (const attempt of connectionAttempts) {
+        const success = await tryConnection(attempt.url, attempt.desc);
+        if (success) {
+          resolve(true);
+          return;
+        }
+        
+        // Небольшая пауза между попытками
+        await new Promise(r => setTimeout(r, 500));
+      }
+      
+      console.error("All WebSocket connection attempts failed");
       resolve(false);
     };
 
-    this.socket.onclose = (event) => {
-      console.log("WebSocket closed:", event.code, event.reason);
-      // Если соединение закрылось сразу после создания, попробуем другие форматы
-      if (event.code === 1006) {
-        console.log('Trying alternative token format...');
-        // Попытаемся с Bearer префиксом
-        const altUrl = `${SOCKET_URL}/ws/chat/${roomId}/?token=Bearer ${this.chatToken}`;
-        console.log('Trying with Bearer:', altUrl);
-        this.socket = new WebSocket(altUrl);
-        
-        this.socket.onopen = () => {
-          console.log("Connected to WebSocket with Bearer token");
-          resolve(true);
-        };
-        
-        this.socket.onerror = () => {
-          console.error("WebSocket connection failed with all token formats");
-          resolve(false);
-        };
-      } else {
-        resolve(false);
-      }
-    };
-
-    this.socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      const chatStore = useChatStore()
-      if (data.attachments && data.attachments.length > 0) {
-        chatStore.message = {
-          ...data,
-          attachments: data.attachments
-        };
-      } else {
-        chatStore.message = data;
-      }
-    };
+    tryConnections();
   });
   }
 

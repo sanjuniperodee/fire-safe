@@ -161,17 +161,25 @@ const formatFileSize = (bytes: number) =>  {
   }
 
   const scrollToBottom = () => {
-  nextTick(() => {
-    if (messagesContainer.value) {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
-    } else {
-      console.warn('messagesContainer is not available');
-    }
-  });
+    nextTick(() => {
+      if (messagesContainer.value) {
+        messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+      } else {
+        // Попробуем еще раз через небольшой таймаут
+        setTimeout(() => {
+          if (messagesContainer.value) {
+            messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+          }
+        }, 100);
+      }
+    });
   };
 
   onMounted(() => {
-    scrollToBottom();
+    // Дождемся полной отрисовки компонента
+    nextTick(() => {
+      scrollToBottom();
+    });
   });
 
   watch(
