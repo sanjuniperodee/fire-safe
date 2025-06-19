@@ -20,6 +20,8 @@ import * as components from 'vuetify/components'
 import { aliases, mdi } from 'vuetify/lib/iconsets/mdi'
 import * as directives from 'vuetify/directives'
 import { createI18n } from 'vue-i18n'
+// Import Vuetify locale adapters
+import { ru, en } from 'vuetify/locale'
 import enLocale from './locales/en.json'
 import ruLocale from './locales/ru.json'
 import kzLocale from './locales/kz.json'
@@ -40,8 +42,9 @@ const vuetify = createVuetify({
   components,
   directives,
   locale: {
-    // @ts-expect-error
-    t: (key, ...params) => i18n.global.t(key, params)
+    locale: 'ru',
+    fallback: 'en',
+    messages: { ru, en }
   },
   date: {
     adapter: DateFnsAdapter,
