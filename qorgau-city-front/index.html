@@ -14,10 +14,18 @@
   <body>
     <div id="app"></div>
     <script 
-      src="https://maps.googleapis.com/maps/api/js?libraries=places,visualization&key=AIzaSyBdgs317FhoVjsuz2ijVbNI9PTwF5-pM5g&map_ids=f6f0430c169f0f06" 
+      src="https://maps.googleapis.com/maps/api/js?libraries=places,visualization&key=AIzaSyBdgs317FhoVjsuz2ijVbNI9PTwF5-pM5g&map_ids=f6f0430c169f0f06&loading=async&callback=initMap" 
       async 
       defer
     ></script>
+    <script>
+      // Initialize callback for Google Maps
+      window.initMap = function() {
+        console.log('Google Maps API loaded successfully');
+        window.googleMapsLoaded = true;
+        window.dispatchEvent(new Event('google-maps-loaded'));
+      };
+    </script>
     <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
     <script type="module" src="/src/main.ts"></script>
   </body>

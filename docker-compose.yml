@@ -79,7 +79,7 @@ services:
       - CORS_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080,http://localhost:3000
       - SMS_ENABLED=False
     ports:
-      - "8000:8000"
+      - "2999:2999"
     volumes:
       - ./qorgau-city/src:/code
       - static_volume:/code/staticfiles
@@ -99,8 +99,8 @@ services:
       python manage.py migrate --noinput
       echo '📋 Running collectstatic...'
       python manage.py collectstatic --noinput
-      echo '🚀 Starting Django server on port 8000...'
-      python manage.py runserver 0.0.0.0:8000
+      echo '🚀 Starting Django server on port 2999...'
+      python manage.py runserver 0.0.0.0:2999
       "
 
   # WebSocket Server for Chat

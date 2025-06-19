@@ -4,6 +4,15 @@ import { getMarkerContent, findMostFrequentAwTypeColor } from './mapUtils'
 import { getMarkerIcon, getMarkerTitle } from '@/utils/constants'
 import axios from 'axios'
 
+// Extend window interface for Google Maps
+declare global {
+  interface Window {
+    googleMapsLoaded?: boolean
+    google?: any
+    markerClusterer?: any
+  }
+}
+
 let markersToClusterize: any
 let cluster: any
 let heatmap: any
@@ -117,6 +126,12 @@ export async function useGoogleMaps(
   center: Coordinates,
   markersData?: ObjectCoordinatesType[]
 ) {
+  // Simple check for Google Maps availability
+  if (!window.google?.maps) {
+    console.warn('Google Maps not loaded yet');
+    return;
+  }
+  
   // @ts-expect-error cdn global object
   const { Map, InfoWindow } = await window.google.maps.importLibrary('maps')
   // @ts-expect-error cdn global object
