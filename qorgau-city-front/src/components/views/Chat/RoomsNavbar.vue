@@ -45,10 +45,24 @@ const search = ref('')
 
 const filteredChats = computed(() => {
   if (!props.chatRooms) location.reload()
-  return props.chatRooms.filter(chat =>
-    chat.receiver.username.toLowerCase().includes(search.value.toLowerCase()) ||
-    chat.receiver.phone.toString().includes(search.value)
-  )
+  return props.chatRooms.filter(chat => {
+    const searchTerm = search.value.toLowerCase()
+    
+    // Safely access properties with optional chaining and null checks
+    const receiverFirstName = chat.receiver?.first_name?.toLowerCase() || ''
+    const receiverLastName = chat.receiver?.last_name?.toLowerCase() || ''
+    const receiverPhone = chat.receiver?.phone?.toString() || ''
+    const initiatorFirstName = chat.initiator?.first_name?.toLowerCase() || ''
+    const initiatorLastName = chat.initiator?.last_name?.toLowerCase() || ''
+    const initiatorPhone = chat.initiator?.phone?.toString() || ''
+    
+    return receiverFirstName.includes(searchTerm) ||
+           receiverLastName.includes(searchTerm) ||
+           receiverPhone.includes(search.value) ||
+           initiatorFirstName.includes(searchTerm) ||
+           initiatorLastName.includes(searchTerm) ||
+           initiatorPhone.includes(search.value)
+  })
 })
 
 </script>

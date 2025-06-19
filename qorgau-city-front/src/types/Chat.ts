@@ -21,15 +21,20 @@ export type Statement = {
 
 export type ChatRooms = {
   id: number
+  name: string
   initiator: ChatUser
   receiver: ChatUser
-  last_message: Message
+  conversation_type: string
+  status: string
   location: string
   provider_name: string
-  categories: []
-  conversation_type: string
+  categories: number[]
   author_name: string
   is_statement_owner: boolean
+  created_at: string
+  updated_at: string
+  last_message: Message | null
+  statement: Statement | null
 }[]
 
 // Paginated response type for API

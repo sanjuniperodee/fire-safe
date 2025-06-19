@@ -109,14 +109,19 @@ class ChatWebSocketService {
   }
 
   async getAllConversations(): Promise<ChatRooms> {
-    const { data }: { data: PaginatedChatRooms } = await axios.get(`${this.chatUrl}/api/v1/conversations/statement/`, {
-      headers: {
-        Authorization: `Bearer ${this.chatToken}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    // Return only the results array from the paginated response
-    return data.results;
+    try {
+      const { data }: { data: PaginatedChatRooms } = await axios.get(`${this.chatUrl}/api/v1/conversations/statement/`, {
+        headers: {
+          Authorization: `Bearer ${this.chatToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      // Return only the results array from the paginated response
+      return data.results;
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+      throw error;
+    }
   }
 
   async getConversation(roomId: number): Promise<ChatRoomType> {
