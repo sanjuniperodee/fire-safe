@@ -55,9 +55,12 @@ services:
       /usr/bin/mc mb --quiet minio/isec --ignore-existing;
       /usr/bin/mc mb --quiet minio/public --ignore-existing;
       /usr/bin/mc mb --quiet minio/static --ignore-existing;
-      /usr/bin/mc policy set private minio/isec;
-      /usr/bin/mc policy set public minio/public;
-      /usr/bin/mc policy set public minio/static;"
+      /usr/bin/mc anonymous set none minio/isec;
+      /usr/bin/mc anonymous set public minio/public;
+      /usr/bin/mc anonymous set public minio/static;
+      echo 'Buckets created successfully:';
+      /usr/bin/mc ls minio/;
+      exit 0;"
 
   app_backend:
     container_name: app_backend
