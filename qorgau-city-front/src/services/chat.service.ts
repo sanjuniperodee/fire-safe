@@ -4,7 +4,7 @@ import type { ChatLoginValidator, ChatRooms, ChatRoomType, Message, SendMessage,
 import { useChatStore } from '@stores/ChatStore'
 
 // Используем локальный API вместо внешнего
-const SOCKET_URL = `ws://165.22.63.97:2998`;
+const SOCKET_URL = 'ws://165.22.63.97:2999';
 new Map();
 // const MAX_CONNECTIONS_PER_INTERVAL = 2;
 // const INTERVAL_MS = 600; // 1 минута
@@ -37,14 +37,26 @@ class ChatWebSocketService {
     return new Promise((resolve) => {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       console.log('WebSocket already connected');
+      resolve(true);
       return;
     }
 
-    // Используем JWT токен для WebSocket соединения
+    // Используем правильный формат токена для WebSocket
     this.socket = new WebSocket(`${SOCKET_URL}/ws/chat/${roomId}/?token=${this.chatToken}`);
 
     this.socket.onopen = () => {
       console.log("Connected to WebSocket");
+      resolve(true);
+    };
+
+    this.socket.onerror = (error) => {
+      console.error("WebSocket Error:", error);
+      resolve(false);
+    };
+
+    this.socket.onclose = (event) => {
+      console.log("WebSocket closed:", event.code, event.reason);
+      resolve(false);
     };
 
     this.socket.onmessage = (event) => {
@@ -58,11 +70,6 @@ class ChatWebSocketService {
       } else {
         chatStore.message = data;
       }
-    };
-    
-
-    this.socket.onerror = (error) => {
-      console.error("WebSocket Error:", error);
     };
   });
   }

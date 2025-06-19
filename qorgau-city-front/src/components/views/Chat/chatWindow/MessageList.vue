@@ -64,7 +64,7 @@
       </div>
     </div>
 
-    <div v-if="props.selectedChat?.statement.status === 'ARCHIVED'" class="archived-block">
+    <div v-if="props.selectedChat?.statement?.status === 'ARCHIVED'" class="archived-block">
       <div class="archived-box">
         <h2>Ответьте на предложение клиента</h2>
         <p>Перейдите в заказ и откликнитесь на него — вы сразу получите контакты клиента. Не оставляйте предложение

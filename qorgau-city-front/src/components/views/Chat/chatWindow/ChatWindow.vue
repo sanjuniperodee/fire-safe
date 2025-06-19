@@ -90,7 +90,7 @@ const sendMessage = async (text: string) => {
 
 const updateStatus = async (status: string) => {
   try {
-    if (props.selectedChat) {
+    if (props.selectedChat && props.selectedChat.statement) {
       console.log(props.selectedChat.statement.id)
       console.log(status)
       await complaintStore.updateChangeStatementStatus(
@@ -104,6 +104,8 @@ const updateStatus = async (status: string) => {
         '#5b9271'
       )
       // location.reload();
+    } else {
+      console.warn('No statement found for selected chat')
     }
   } catch (error) {
     console.log(error)
