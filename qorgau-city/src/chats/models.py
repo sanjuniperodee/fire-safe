@@ -27,7 +27,7 @@ class ChatRoom(models.Model):
     location = models.CharField(max_length=255, blank=True)
     provider_name = models.CharField(max_length=255, blank=True)
     categories = models.JSONField(default=list, blank=True)
-    author_name = models.CharField(max_length=255, blank=True)
+    author_name = models.CharField(max_length=255, blank=True, null=True, default='')
     is_statement_owner = models.BooleanField(default=False)
     
     # Добавляем связь с заявкой

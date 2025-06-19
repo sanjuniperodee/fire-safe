@@ -60,14 +60,20 @@ def create_statement_chat_room(
                 pass
         
         # Создать комнату чата
+        # Ensure we have valid names
+        final_author_name = author_name or (initiator.first_name if initiator.first_name else initiator.phone)
+        final_provider_name = provider_name or (receiver.first_name if receiver and receiver.first_name else (receiver.phone if receiver else 'Unknown Provider'))
+        
+        logger.info(f"Creating chat room with author_name='{final_author_name}', provider_name='{final_provider_name}'")
+        
         chat_room = ChatRoom.objects.create(
             initiator=initiator,
             receiver=receiver,
             conversation_type='statement',
-            location=location,
-            provider_name=provider_name,
+            location=location or '',
+            provider_name=final_provider_name,
             categories=categories or [],
-            author_name=author_name,
+            author_name=final_author_name,
             statement=statement,
             status='OPENED'
         )

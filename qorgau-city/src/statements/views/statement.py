@@ -528,8 +528,8 @@ class StatementViewSet(viewsets.ModelViewSet):
                         phone_2=sp.provider.phone,
                         categories=list(sp.statement.categories.values_list('id', flat=True)),
                         location=sp.statement.location,
-                        author_name=sp.statement.author.first_name,
-                        provider_name=sp.provider.first_name,
+                        author_name=sp.statement.author.first_name or sp.statement.author.phone,
+                        provider_name=sp.provider.first_name or sp.provider.phone,
                         statement_provider_id=sp.id,
                         statement_id=sp.statement.id
                     )

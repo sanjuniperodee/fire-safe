@@ -72,13 +72,19 @@ class StatementProviderSerializer(serializers.ModelSerializer):
             try:
                 print(f'Creating chat room for statement {statement.id}, statement author: {statement.author.phone}, provider: {provider.phone}')
                 
+                # Ensure we have valid names
+                author_name = statement.author.first_name or statement.author.phone
+                provider_name = provider.first_name or provider.phone
+                
+                print(f'Using author_name: "{author_name}", provider_name: "{provider_name}"')
+                
                 chat_room_id = create_statement_chat_room(
                     phone_1=statement.author.phone,
                     phone_2=provider.phone,
                     categories=list(statement.categories.values_list('id', flat=True)),
                     location=statement.location,
-                    author_name=statement.author.first_name,
-                    provider_name=provider.first_name,
+                    author_name=author_name,
+                    provider_name=provider_name,
                     statement_provider_id=statement_provider.id,
                     statement_id=statement.id
                 )
