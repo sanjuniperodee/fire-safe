@@ -32,6 +32,14 @@ export type ChatRooms = {
   is_statement_owner: boolean
 }[]
 
+// Paginated response type for API
+export type PaginatedChatRooms = {
+  count: number
+  next: string | null
+  previous: string | null
+  results: ChatRooms
+}
+
 export type Message = {
   id?: number
   sender: number

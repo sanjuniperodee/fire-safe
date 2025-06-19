@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { ChatLoginValidator, ChatRooms, ChatRoomType, Message, SendMessage, Files, FileContent } from '@/types/Chat';
+import type { ChatLoginValidator, ChatRooms, ChatRoomType, Message, SendMessage, Files, FileContent, PaginatedChatRooms } from '@/types/Chat';
 // import type { ComplaintRoomType } from '@/types/Complaint';
 import { useChatStore } from '@stores/ChatStore'
 
@@ -109,13 +109,14 @@ class ChatWebSocketService {
   }
 
   async getAllConversations(): Promise<ChatRooms> {
-    const { data } = await axios.get(`${this.chatUrl}/api/v1/conversations/statement/`, {
+    const { data }: { data: PaginatedChatRooms } = await axios.get(`${this.chatUrl}/api/v1/conversations/statement/`, {
       headers: {
         Authorization: `Bearer ${this.chatToken}`,
         'Content-Type': 'application/json'
       }
     });
-    return data;
+    // Return only the results array from the paginated response
+    return data.results;
   }
 
   async getConversation(roomId: number): Promise<ChatRoomType> {
@@ -189,13 +190,14 @@ class ChatWebSocketService {
 
   async getAllChatRooms(status: string): Promise<ChatRooms> {
     try {
-      const { data } = await axios.get(`${this.chatUrl}/api/v1/conversations/?statement_status=${status}`, {
+      const { data }: { data: PaginatedChatRooms } = await axios.get(`${this.chatUrl}/api/v1/conversations/?statement_status=${status}`, {
         headers: {
           Authorization: `Bearer ${this.chatToken}`,
           'Content-Type': 'application/json'
         }
       });
-      return data;
+      // Return only the results array from the paginated response
+      return data.results;
     } catch (error) {
       console.error('Error fetching chat rooms:', error);
       throw error;
