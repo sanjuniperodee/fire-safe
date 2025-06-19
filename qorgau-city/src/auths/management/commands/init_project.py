@@ -1,9 +1,10 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
-from auths.models import CustomUserRole, UserRole
+from auths.models import CustomUserRole, UserRole, Category
 from objects.models import Document, DocumentKey
 from objects.management.commands.create_documents import Command as CreateDocumentsCommand
 from objects.management.commands.create_document_keys import Command as CreateDocumentKeysCommand
+from auths.management.commands.init_categories import Command as InitCategoriesCommand
 import auths
 
 User = get_user_model()
@@ -25,6 +26,9 @@ class Command(BaseCommand):
         
         # 4. Создаем документы и ключи документов
         self.create_documents()
+        
+        # 5. Создаем категории услуг
+        self.create_categories()
         
         self.stdout.write(self.style.SUCCESS('✅ Project initialization completed!'))
         self.print_credentials()
@@ -173,6 +177,18 @@ class Command(BaseCommand):
         else:
             self.stdout.write('  - Document keys already exist')
 
+    def create_categories(self):
+        """Создание категорий услуг"""
+        self.stdout.write('📋 Creating service categories...')
+        
+        # Создаем категории
+        if not Category.objects.exists():
+            init_categories_command = InitCategoriesCommand()
+            init_categories_command.handle()
+            self.stdout.write('  ✓ Created service categories')
+        else:
+            self.stdout.write('  - Service categories already exist')
+
     def print_credentials(self):
         """Вывод учетных данных"""
         self.stdout.write('\n' + '='*60)
@@ -197,5 +213,6 @@ class Command(BaseCommand):
         self.stdout.write(f"  Пользователей: {User.objects.count()}")
         self.stdout.write(f"  Документов: {Document.objects.count()}")
         self.stdout.write(f"  Ключей документов: {DocumentKey.objects.count()}")
+        self.stdout.write(f"  Категорий услуг: {Category.objects.count()}")
         
         self.stdout.write('\n' + '='*60) 
