@@ -11,6 +11,7 @@ const codeVerified = ref<boolean>(false)
 const code = ref<string | number>('')
 const snackbarStore = useSnackbarStore()
 const router = useRouter()
+const displayedSmsCode = ref<string>('')
 const codeVerificationForm = ref(null)
 const phoneRules = ref([
   (v: any) => !!v || 'Номер телефона обязателен',
@@ -49,10 +50,11 @@ const handleKeyPress = (event: KeyboardEvent) => {
 const sendCode = async () => {
   try {
     isLoading.value = true
-    const message = await authService.resendCode(userStore.codeVerificationPhoneNumber)
+    const response = await authService.resendCode(userStore.codeVerificationPhoneNumber)
     isLoading.value = false
     userStore.codeSended = true
-    snackbarStore.pullSnackbar(message, 3000, '#5b9271')
+    displayedSmsCode.value = response.smsCode || ''
+    snackbarStore.pullSnackbar(response.message, 3000, '#5b9271')
   } catch (e) {
     isLoading.value = false
     snackbarStore.pullSnackbar('Произошла ошибка.', 3000, '#d20f0d')
@@ -62,10 +64,11 @@ const sendCode = async () => {
 const resendCode = async () => {
   try {
     isLoading.value = true
-    const message = await authService.resendCode(userStore.codeVerificationPhoneNumber)
+    const response = await authService.resendCode(userStore.codeVerificationPhoneNumber)
     isLoading.value = false
     userStore.codeSended = true
-    snackbarStore.pullSnackbar(message, 3000, '#5b9271')
+    displayedSmsCode.value = response.smsCode || ''
+    snackbarStore.pullSnackbar(response.message, 3000, '#5b9271')
   } catch (e) {
     isLoading.value = false
     console.log(e)
@@ -164,6 +167,17 @@ onBeforeUnmount(() => {
         Мы отправили SMS на ваш номер телефона. Введите код, указанный в этом сообщении.
       </p>
 
+      <!-- Отображение SMS кода для тестирования -->
+      <div v-if="displayedSmsCode" class="sms-code-display">
+        <v-alert
+          type="info"
+          variant="tonal"
+          title="Код для тестирования"
+          :text="`SMS код: ${displayedSmsCode}`"
+          class="mb-4"
+        ></v-alert>
+      </div>
+
       <v-form ref="codeVerificationForm" class="login-form">
         <v-otp-input
           v-model="code"
@@ -235,5 +249,9 @@ onBeforeUnmount(() => {
   font-size: 14px;
   color: #1a73e8;
   text-decoration: none;
+}
+
+.sms-code-display {
+  margin: 16px 0;
 }
 </style>

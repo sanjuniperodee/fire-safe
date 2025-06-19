@@ -51,6 +51,17 @@
             >Мы вам отправили SMS на ваш номер телефона, напишите код указанный в этом
             сообщении.</v-card-text
           >
+          
+          <!-- Отображение SMS кода для тестирования -->
+          <div v-if="displayedSmsCode" class="sms-code-display mb-4">
+            <v-alert
+              type="info"
+              variant="tonal"
+              title="Код для тестирования"
+              :text="`SMS код: ${displayedSmsCode}`"
+            ></v-alert>
+          </div>
+          
           <v-otp-input
             v-model="code"
             :disabled="isLoading"
@@ -143,6 +154,7 @@ const phone = ref<string>('+77')
 const code = ref<number>(0)
 const newPassword = ref<string>('')
 const newPasswordRepeat = ref<string>('')
+const displayedSmsCode = ref<string>('')
 
 const sendSmsForm = ref(null)
 const passwordForm = ref(null)
@@ -180,10 +192,11 @@ const sendSmsCode = async () => {
       const payload: SendSmsCodePayload = {
         phone: phone.value
       }
-      const message = await authService.sendSmsCode(payload)
+      const response = await authService.sendSmsCode(payload)
       isLoading.value = false
       codeSended.value = true
-      snackbarStore.pullSnackbar(message, 3000, '#5b9271')
+      displayedSmsCode.value = response.smsCode || ''
+      snackbarStore.pullSnackbar(response.message, 3000, '#5b9271')
     } catch (e) {
       isLoading.value = false
       snackbarStore.pullSnackbar(
@@ -316,5 +329,8 @@ const forgotPassword = async () => {
       width: 80%;
     }
   }
+}
+.sms-code-display {
+  margin: 16px 0;
 }
 </style>

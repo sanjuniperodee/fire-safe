@@ -83,13 +83,16 @@ class AuthService {
     return data
   }
 
-  async sendSmsCode(body: SendSmsCodePayload): Promise<string> {
-    await axios.post(`${this.baseUrl}/api/v1/users/send-sms-code`, body, {
+  async sendSmsCode(body: SendSmsCodePayload): Promise<{message: string, smsCode?: string}> {
+    const { data } = await axios.post(`${this.baseUrl}/api/v1/users/send-sms-code`, body, {
       headers: {
         'Content-Type': 'application/json'
       }
     })
-    return 'SMS код был отправлен на ваш номер.'
+    return {
+      message: data.message || 'SMS код был отправлен на ваш номер.',
+      smsCode: data.sms_code
+    }
   }
 
   async verifySmsCode(body: VerifySmsCodePayload): Promise<string> {
@@ -110,13 +113,16 @@ class AuthService {
     return 'Пароль успешно изменен. Переводим вас на страницу авторизации.'
   }
 
-  async resendCode(phone: string): Promise<string> {
-    await axios.get(`${this.baseUrl}/api/v1/users/resend-activate?phone=${phone}`, {
+  async resendCode(phone: string): Promise<{message: string, smsCode?: string}> {
+    const { data } = await axios.get(`${this.baseUrl}/api/v1/users/resend-activate?phone=${phone}`, {
       headers: {
         'Content-Type': 'application/json'
       }
     })
-    return 'Мы отправили код на ваш номер телефона.'
+    return {
+      message: data.message || 'Мы отправили код на ваш номер телефона.',
+      smsCode: data.sms_code
+    }
   }
 }
 
