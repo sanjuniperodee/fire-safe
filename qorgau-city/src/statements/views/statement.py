@@ -22,6 +22,7 @@ from helpers.permissions import (
     IsProviderOrReadOnly,
     IsObjectOwner,
 )
+from helpers.local_chat_api import create_statement_chat_room
 from statements.models import (
     Statement,
     StatementProvider,
@@ -219,33 +220,40 @@ class StatementViewSet(viewsets.ModelViewSet):
     )
     def call_statement(self, request, statement_id=None):
         if request.method == 'POST':
-            # Combine the statement_id from the URL with the request data
-            data = request.data.copy()
-            data['statement'] = statement_id
-            data['provider'] = request.user.id  # Автоматически добавляем текущего пользователя как провайдера
+            try:
+                # Combine the statement_id from the URL with the request data
+                data = request.data.copy()
+                data['statement'] = statement_id
+                data['provider'] = request.user.id  # Автоматически добавляем текущего пользователя как провайдера
 
-            serializer = self.get_serializer(data=data)
-            if serializer.is_valid():
-                serializer.save()
+                print(f'=== call_statement called ===')
+                print(f'Statement ID: {statement_id}')
+                print(f'Provider ID: {request.user.id}')
+                print(f'Request data: {data}')
+
+                serializer = self.get_serializer(data=data)
+                if serializer.is_valid():
+                    print('Serializer is valid, calling save()')
+                    statement_provider = serializer.save()
+                    print(f'StatementProvider created successfully: {statement_provider.id}')
+                    return Response(
+                        serializer.data,
+                        status=status.HTTP_201_CREATED,
+                    )
+                else:
+                    print(f'Serializer validation errors: {serializer.errors}')
+                    return Response(
+                        serializer.errors,
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            except Exception as e:
+                print(f'Error in call_statement: {e}')
+                import traceback
+                traceback.print_exc()
                 return Response(
-                    serializer.data,
-                    status=status.HTTP_201_CREATED,
+                    {'error': str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
-            return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # elif request.method == 'DELETE':
-        #     statement_provider = get_object_or_404(
-        #         StatementProvider,
-        #         statement_id=statement_id,
-        #         provider=request.user,
-        #     )
-        #     serializer = self.get_serializer(statement_provider)
-        #     data = serializer.data
-        #     statement_provider.delete()
-        #     return Response(data, status=status.HTTP_200_OK)
 
     @action(
         detail=False,
@@ -492,4 +500,67 @@ class StatementViewSet(viewsets.ModelViewSet):
             return Response(
                 {'error': 'Statement not found'},
                 status=status.HTTP_404_NOT_FOUND
+            )
+
+    @action(
+        detail=False,
+        methods=['post'],
+        url_path='cleanup-broken-responses'
+    )
+    def cleanup_broken_responses(self, request):
+        """Cleanup endpoint to fix broken StatementProvider records"""
+        try:
+            # Find StatementProvider records without chat_room_id
+            broken_responses = StatementProvider.objects.filter(chat_room_id__isnull=True)
+            
+            cleanup_info = {
+                'total_broken': broken_responses.count(),
+                'fixed': 0,
+                'failed': 0,
+                'details': []
+            }
+            
+            for sp in broken_responses:
+                try:
+                    # Try to create chat room for this response
+                    chat_room_id = create_statement_chat_room(
+                        phone_1=sp.statement.author.phone,
+                        phone_2=sp.provider.phone,
+                        categories=list(sp.statement.categories.values_list('id', flat=True)),
+                        location=sp.statement.location,
+                        author_name=sp.statement.author.first_name,
+                        provider_name=sp.provider.first_name,
+                        statement_provider_id=sp.id,
+                        statement_id=sp.statement.id
+                    )
+                    
+                    if chat_room_id:
+                        sp.chat_room_id = chat_room_id
+                        sp.save()
+                        cleanup_info['fixed'] += 1
+                        cleanup_info['details'].append({
+                            'statement_provider_id': sp.id,
+                            'chat_room_id': chat_room_id,
+                            'status': 'fixed'
+                        })
+                    else:
+                        cleanup_info['failed'] += 1
+                        cleanup_info['details'].append({
+                            'statement_provider_id': sp.id,
+                            'status': 'failed - no chat room id returned'
+                        })
+                        
+                except Exception as e:
+                    cleanup_info['failed'] += 1
+                    cleanup_info['details'].append({
+                        'statement_provider_id': sp.id,
+                        'status': f'failed - {str(e)}'
+                    })
+            
+            return Response(cleanup_info)
+            
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

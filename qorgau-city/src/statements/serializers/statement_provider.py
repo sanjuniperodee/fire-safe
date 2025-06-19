@@ -61,11 +61,14 @@ class StatementProviderSerializer(serializers.ModelSerializer):
         if statement.status == 'ARCHIVED':
             raise ValidationError("Нельзя добавить поставщика к архивированной заявке.")
 
+        # Create the StatementProvider first
+        statement_provider = None
         with transaction.atomic():
             statement_provider = StatementProvider.objects.create(**validated_data)
             print(f'StatementProvider created with ID: {statement_provider.id}')
 
-            # Create chat room with local chat API (no JWT token needed)
+        # Create chat room outside of the main transaction to avoid transaction errors
+        if statement_provider:
             try:
                 print(f'Creating chat room for statement {statement.id}, statement author: {statement.author.phone}, provider: {provider.phone}')
                 
@@ -83,9 +86,11 @@ class StatementProviderSerializer(serializers.ModelSerializer):
                 print(f'Chat room created with ID: {chat_room_id}')
                 
                 if chat_room_id:
-                    statement_provider.chat_room_id = chat_room_id
-                    statement_provider.save()
-                    print(f'Statement provider updated with chat_room_id: {chat_room_id}')
+                    # Update the StatementProvider with chat room ID in a separate transaction
+                    with transaction.atomic():
+                        statement_provider.chat_room_id = chat_room_id
+                        statement_provider.save()
+                        print(f'Statement provider updated with chat_room_id: {chat_room_id}')
                 else:
                     print('Chat room ID is None, not updating statement provider')
                     
@@ -95,13 +100,17 @@ class StatementProviderSerializer(serializers.ModelSerializer):
                 traceback.print_exc()
                 # Don't fail the entire operation if chat room creation fails
 
-            # Check final state
-            statement_provider.refresh_from_db()
-            print(f'Final StatementProvider state: ID={statement_provider.id}, chat_room_id={statement_provider.chat_room_id}')
-            
-            # Check if the provider response was created correctly
-            provider_count = StatementProvider.objects.filter(statement=statement, provider=provider).count()
-            print(f'Provider responses count for this statement and provider: {provider_count}')
+        # Check final state outside of any transaction
+        if statement_provider:
+            try:
+                statement_provider.refresh_from_db()
+                print(f'Final StatementProvider state: ID={statement_provider.id}, chat_room_id={statement_provider.chat_room_id}')
+                
+                # Check if the provider response was created correctly
+                provider_count = StatementProvider.objects.filter(statement=statement, provider=provider).count()
+                print(f'Provider responses count for this statement and provider: {provider_count}')
+            except Exception as e:
+                print(f'Error checking final state: {e}')
 
         return statement_provider
 

@@ -32,11 +32,21 @@ def create_statement_chat_room(
         int: ID созданной комнаты чата
     """
     try:
+        logger.info(f"Creating statement chat room between {phone_1} and {phone_2}")
+        
         # Найти пользователей по телефонам
-        initiator = User.objects.get(phone=phone_1)
+        try:
+            initiator = User.objects.get(phone=phone_1)
+            logger.info(f"Found initiator: {initiator.id} ({initiator.phone})")
+        except User.DoesNotExist:
+            logger.error(f"Initiator with phone {phone_1} not found")
+            raise ValueError(f"User with phone {phone_1} not found")
+            
         try:
             receiver = User.objects.get(phone=phone_2)
+            logger.info(f"Found receiver: {receiver.id} ({receiver.phone})")
         except User.DoesNotExist:
+            logger.warning(f"Receiver with phone {phone_2} not found, setting to None")
             receiver = None
             
         # Получить заявление если указан ID
@@ -44,7 +54,9 @@ def create_statement_chat_room(
         if statement_id:
             try:
                 statement = Statement.objects.get(id=statement_id)
+                logger.info(f"Found statement: {statement.id}")
             except Statement.DoesNotExist:
+                logger.warning(f"Statement with ID {statement_id} not found")
                 pass
         
         # Создать комнату чата
@@ -63,11 +75,14 @@ def create_statement_chat_room(
         logger.info(f"Created statement chat room {chat_room.id} between {phone_1} and {phone_2}")
         return chat_room.id
         
-    except User.DoesNotExist:
-        logger.error(f"User with phone {phone_1} not found")
-        raise ValueError(f"User with phone {phone_1} not found")
+    except ValueError as e:
+        # Re-raise ValueError for missing users
+        logger.error(f"ValueError in create_statement_chat_room: {e}")
+        raise
     except Exception as e:
-        logger.error(f"Failed to create statement chat room: {e}")
+        logger.error(f"Unexpected error in create_statement_chat_room: {e}")
+        import traceback
+        traceback.print_exc()
         raise
 
 
