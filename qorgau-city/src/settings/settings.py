@@ -19,6 +19,7 @@ ALLOWED_HOSTS = ["*"]
 # load_dotenv()
 
 CORS_ALLOWED_ORIGINS = [
+    'http://165.22.63.97:5173',
     'http://192.168.1.4:3000',
     'http://localhost:3000',
     'http://localhost:5173',
