@@ -307,9 +307,17 @@ class StatementViewSet(viewsets.ModelViewSet):
         permission_classes=[IsProviderOrReadOnly]
     )
     def selected_statements(self, request):
+        print(f'=== selected_statements called ===')
+        print(f'User: {request.user.id} ({request.user.phone})')
+        
         queryset = Statement.objects.filter(
             provider_responses__provider=request.user,
         )
+        
+        print(f'Found {queryset.count()} statements for user')
+        for stmt in queryset:
+            print(f'Statement {stmt.id}: responses={stmt.provider_responses.count()}')
+        
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(
@@ -415,4 +423,73 @@ class StatementViewSet(viewsets.ModelViewSet):
             return Response(
                 {'error': 'Statement not found'},
                 status=status.HTTP_404_NOT_FOUND,
+            )
+
+    @action(
+        detail=True,
+        methods=['get'],
+        url_path='debug'
+    )
+    def debug_statement(self, request, pk=None):
+        """Debug endpoint to check statement provider status"""
+        try:
+            statement = Statement.objects.get(pk=pk)
+            
+            debug_info = {
+                'statement_id': statement.id,
+                'statement_status': statement.status,
+                'statement_author': {
+                    'id': statement.author.id,
+                    'phone': statement.author.phone,
+                    'name': f"{statement.author.first_name} {statement.author.last_name}".strip()
+                },
+                'current_user': {
+                    'id': request.user.id,
+                    'phone': request.user.phone,
+                    'name': f"{request.user.first_name} {request.user.last_name}".strip(),
+                    'is_provider': request.user.is_provider
+                },
+                'provider_responses': [],
+                'chat_rooms': []
+            }
+            
+            # Get all provider responses
+            for sp in statement.provider_responses.all():
+                debug_info['provider_responses'].append({
+                    'id': sp.id,
+                    'provider_id': sp.provider.id,
+                    'provider_phone': sp.provider.phone,
+                    'chat_room_id': sp.chat_room_id,
+                    'status': sp.status,
+                    'created_at': sp.created_at
+                })
+            
+            # Get all chat rooms for this statement
+            if hasattr(statement, 'chat_rooms'):
+                for chat in statement.chat_rooms.all():
+                    debug_info['chat_rooms'].append({
+                        'id': chat.id,
+                        'initiator_phone': chat.initiator.phone if chat.initiator else None,
+                        'receiver_phone': chat.receiver.phone if chat.receiver else None,
+                        'status': chat.status,
+                        'created_at': chat.created_at
+                    })
+            
+            # Check if current user has responded
+            user_response = StatementProvider.objects.filter(statement=statement, provider=request.user).first()
+            debug_info['user_has_responded'] = user_response is not None
+            if user_response:
+                debug_info['user_response'] = {
+                    'id': user_response.id,
+                    'chat_room_id': user_response.chat_room_id,
+                    'status': user_response.status,
+                    'created_at': user_response.created_at
+                }
+            
+            return Response(debug_info)
+            
+        except Statement.DoesNotExist:
+            return Response(
+                {'error': 'Statement not found'},
+                status=status.HTTP_404_NOT_FOUND
             )

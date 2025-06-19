@@ -77,7 +77,14 @@ class ObjectOwnerStatementSerializer(serializers.ModelSerializer):
 
     def get_is_called(self, obj):
         user = self.context['request'].user
-        return StatementProvider.objects.filter(statement=obj, provider=user).exists()
+        result = StatementProvider.objects.filter(statement=obj, provider=user).exists()
+        print(f'get_is_called: Statement ID={obj.id}, User ID={user.id}, User phone={user.phone}, Result={result}')
+        
+        # Debug: Check all provider responses for this statement
+        all_responses = StatementProvider.objects.filter(statement=obj)
+        print(f'All provider responses for statement {obj.id}: {[f"Provider {sp.provider.id}({sp.provider.phone})" for sp in all_responses]}')
+        
+        return result
 
     def to_internal_value(self, data):
         """Handles multi-value-dict, like form-data."""

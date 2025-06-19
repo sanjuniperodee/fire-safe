@@ -22,10 +22,15 @@ const goToPage = (route: string) => {
 
 const noteStatement = async (cardId: number) => {
   try {
+    console.log('Starting noteStatement for cardId:', cardId)
+    
     const data = await statementStore.noteStatement(cardId)
+    console.log('noteStatement API response:', data)
     
     // Обновляем данные о заявке, чтобы поле is_called обновилось
+    console.log('Refreshing statement data...')
     await statementStore.getStatementById(cardId)
+    console.log('Updated statement after refresh:', statementStore.statement)
    
     goToPage('Chat')
    
@@ -35,8 +40,8 @@ const noteStatement = async (cardId: number) => {
       '#5b9271'
     )
   } catch (err) {
+    console.error('Error in noteStatement:', err)
     snackbarStore.pullSnackbar('Не удалось отправить отклик!', 3000, '#d20f0d')
-    console.error(err)
   }
 }
 

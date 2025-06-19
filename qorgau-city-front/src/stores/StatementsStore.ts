@@ -52,9 +52,13 @@ export const useStatementStore = defineStore('StatementStore', () => {
   const getStatementById = async (id: number) => {
     isLoading.value = true
     try {
-      statement.value = await statementService.getStatementById(id)
+      console.log('StatementsStore: Getting statement by ID:', id)
+      const result = await statementService.getStatementById(id)
+      console.log('StatementsStore: getStatementById response:', result)
+      statement.value = result
+      console.log('StatementsStore: Updated statement.value:', statement.value)
     } catch (error) {
-      console.error(error)
+      console.error('StatementsStore: Error in getStatementById:', error)
     } finally {
       isLoading.value = false
     }
@@ -85,16 +89,20 @@ export const useStatementStore = defineStore('StatementStore', () => {
   const noteStatement = async (id: number) => {
     isLoading.value = true
     try {
+      console.log('StatementsStore: Starting noteStatement for ID:', id)
       const data = await statementService.noteStatement(id)
+      console.log('StatementsStore: noteStatement API response:', data)
       
       // Обновляем локальное состояние если это текущая заявка
       if (statement.value && statement.value.id === id) {
+        console.log('StatementsStore: Updating local statement.is_called from', statement.value.is_called, 'to true')
         statement.value.is_called = true
       }
       
       return data
     } catch (error) {
-      console.error(error)
+      console.error('StatementsStore: Error in noteStatement:', error)
+      throw error
     } finally {
       isLoading.value = false
     }

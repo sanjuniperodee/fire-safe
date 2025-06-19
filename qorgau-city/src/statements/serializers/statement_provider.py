@@ -51,12 +51,19 @@ class StatementProviderSerializer(serializers.ModelSerializer):
         statement = validated_data.get('statement')
         provider = validated_data.get('provider')
 
+        print(f'=== Creating StatementProvider ===')
+        print(f'Statement ID: {statement.id}')
+        print(f'Provider ID: {provider.id}, Phone: {provider.phone}')
+        print(f'Statement author phone: {statement.author.phone}')
+        print(f'Statement status: {statement.status}')
+
         # Check if statement exists and is not archived
         if statement.status == 'ARCHIVED':
             raise ValidationError("Нельзя добавить поставщика к архивированной заявке.")
 
         with transaction.atomic():
             statement_provider = StatementProvider.objects.create(**validated_data)
+            print(f'StatementProvider created with ID: {statement_provider.id}')
 
             # Create chat room with local chat API (no JWT token needed)
             try:
@@ -87,6 +94,14 @@ class StatementProviderSerializer(serializers.ModelSerializer):
                 import traceback
                 traceback.print_exc()
                 # Don't fail the entire operation if chat room creation fails
+
+            # Check final state
+            statement_provider.refresh_from_db()
+            print(f'Final StatementProvider state: ID={statement_provider.id}, chat_room_id={statement_provider.chat_room_id}')
+            
+            # Check if the provider response was created correctly
+            provider_count = StatementProvider.objects.filter(statement=statement, provider=provider).count()
+            print(f'Provider responses count for this statement and provider: {provider_count}')
 
         return statement_provider
 
