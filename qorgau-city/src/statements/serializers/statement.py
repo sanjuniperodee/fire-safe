@@ -37,6 +37,7 @@ class ObjectOwnerStatementSerializer(serializers.ModelSerializer):
         required=False,
         allow_empty=True
     )
+    status = serializers.SerializerMethodField()
     is_seen = serializers.SerializerMethodField()
     is_called = serializers.SerializerMethodField()
 
@@ -52,11 +53,21 @@ class ObjectOwnerStatementSerializer(serializers.ModelSerializer):
             'min_price',
             'max_price',
             'is_active',
+            'status',
             'uploaded_media',
             'is_seen',
             'is_called',
             'created_at',
         )
+
+    def get_status(self, obj):
+        """Return status based on is_active and is_busy_by_provider fields"""
+        if not obj.is_active:
+            return 'ARCHIVED'
+        elif obj.is_busy_by_provider:
+            return 'IN_WORK'
+        else:
+            return 'OPENED'
 
     def get_is_seen(self, obj):
         user = self.context['request'].user

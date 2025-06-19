@@ -52,7 +52,7 @@ class StatementProviderSerializer(serializers.ModelSerializer):
         provider = validated_data.get('provider')
 
         # Check if statement exists and is not archived
-        if statement.status == StatementStatus.ARCHIVED:
+        if statement.status == 'ARCHIVED':
             raise ValidationError("Нельзя добавить поставщика к архивированной заявке.")
 
         with transaction.atomic():

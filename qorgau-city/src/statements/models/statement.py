@@ -4,7 +4,6 @@ import auths.validators as a_validators
 from auths.models import Category
 from helpers.models import TimestampMixin
 from .base import User
-from statements import StatementStatus
 
 
 class Statement(TimestampMixin, models.Model):
@@ -41,12 +40,6 @@ class Statement(TimestampMixin, models.Model):
     max_price = models.PositiveBigIntegerField(
         'Максимальная цена',
     )
-    status = models.CharField(
-        'статус заявки',
-        max_length=20,
-        choices=StatementStatus.choices,
-        default=StatementStatus.OPENED
-    )
     is_active = models.BooleanField(
         'Статус',
         default=True
@@ -64,6 +57,16 @@ class Statement(TimestampMixin, models.Model):
     class Meta:
         verbose_name = 'заказ собственника'
         verbose_name_plural = 'заказы собственников'
+
+    @property
+    def status(self):
+        """Return status based on is_active and is_busy_by_provider fields"""
+        if not self.is_active:
+            return 'ARCHIVED'
+        elif self.is_busy_by_provider:
+            return 'IN_WORK'
+        else:
+            return 'OPENED'
 
     def is_seen_by(self, user):
         if user.is_provider:
