@@ -3,16 +3,16 @@
     v-if="userStore.acceptedRoles.includes(UserRoleOptions.OBJECT_OWNER) && selectedChat?.receiver.phone === userStore.user?.phone || selectedChat?.is_statement_owner"
     class="message-input">
     <button
-      v-if="props.selectedChat?.statement.status !== 'IN_WORK' && props.selectedChat?.statement.status !== 'ARCHIVED' && props.selectedChat?.statement.status !== 'COMPLETED'"
+      v-if="props.selectedChat?.statement?.status !== 'IN_WORK' && props.selectedChat?.statement?.status !== 'ARCHIVED' && props.selectedChat?.statement?.status !== 'COMPLETED'"
       @click="selectInWork" class="complaint-btn">Договорились</button>
     <button
-      v-if="props.selectedChat?.statement.status !== 'COMPLETED' && props.selectedChat?.statement.status !== 'ARCHIVED'"
+      v-if="props.selectedChat?.statement?.status !== 'COMPLETED' && props.selectedChat?.statement?.status !== 'ARCHIVED'"
       @click="selectComplated" class="complaint-btn">Заказ выполнен</button>
-    <button v-if="props.selectedChat?.statement.status !== 'ARCHIVED' && props.selectedChat?.statement.status !== 'COMPLETED'" @click="selectArchived"
+    <button v-if="props.selectedChat?.statement?.status !== 'ARCHIVED' && props.selectedChat?.statement?.status !== 'COMPLETED'" @click="selectArchived"
       class="complaint-btn">Отправить в архив</button>
   </div>
   <div v-if="selectedChat">
-    <div v-if="props.selectedChat?.statement.status !== 'ARCHIVED'" class="message-input">
+    <div v-if="!props.selectedChat?.statement || props.selectedChat?.statement?.status !== 'ARCHIVED'" class="message-input">
       <div v-if="uploadedFile" class="uploaded-file-preview">
         <img v-if="fileType === 'image'" :src="filePreview!" alt="uploaded" class="preview-image" />
         <video v-else-if="fileType === 'video'" :src="filePreview!" controls class="preview-video"></video>
@@ -32,9 +32,9 @@
 
       <input v-model="textMessage" @keyup.enter="sendMessage" placeholder="Введите сообщение..." />
       <button @click="sendMessage"
-        :class="props.selectedChat?.statement.status === 'ARCHIVED' ? 'disabled' : 'send-btn'">Отправить</button>
+        :class="props.selectedChat?.statement?.status === 'ARCHIVED' ? 'disabled' : 'send-btn'">Отправить</button>
     </div>
-    <div v-else="props.selectedChat?.statement.status === 'ARCHIVED'" class="message-input">
+    <div v-else-if="props.selectedChat?.statement?.status === 'ARCHIVED'" class="message-input">
       <p class="text-archived">Вы не можете писать в этот чат</p>
     </div>
   </div>

@@ -41,8 +41,11 @@ class ChatWebSocketService {
       return;
     }
 
-    // Используем правильный формат токена для WebSocket
-    this.socket = new WebSocket(`${SOCKET_URL}/ws/chat/${roomId}/?token=${this.chatToken}`);
+    // Пробуем разные форматы токена
+    let wsUrl = `${SOCKET_URL}/ws/chat/${roomId}/?token=${this.chatToken}`;
+    
+    console.log('Attempting WebSocket connection to:', wsUrl);
+    this.socket = new WebSocket(wsUrl);
 
     this.socket.onopen = () => {
       console.log("Connected to WebSocket");
@@ -51,12 +54,32 @@ class ChatWebSocketService {
 
     this.socket.onerror = (error) => {
       console.error("WebSocket Error:", error);
+      console.log('WebSocket readyState:', this.socket?.readyState);
       resolve(false);
     };
 
     this.socket.onclose = (event) => {
       console.log("WebSocket closed:", event.code, event.reason);
-      resolve(false);
+      // Если соединение закрылось сразу после создания, попробуем другие форматы
+      if (event.code === 1006) {
+        console.log('Trying alternative token format...');
+        // Попытаемся с Bearer префиксом
+        const altUrl = `${SOCKET_URL}/ws/chat/${roomId}/?token=Bearer ${this.chatToken}`;
+        console.log('Trying with Bearer:', altUrl);
+        this.socket = new WebSocket(altUrl);
+        
+        this.socket.onopen = () => {
+          console.log("Connected to WebSocket with Bearer token");
+          resolve(true);
+        };
+        
+        this.socket.onerror = () => {
+          console.error("WebSocket connection failed with all token formats");
+          resolve(false);
+        };
+      } else {
+        resolve(false);
+      }
     };
 
     this.socket.onmessage = (event) => {
