@@ -86,6 +86,12 @@ export const useStatementStore = defineStore('StatementStore', () => {
     isLoading.value = true
     try {
       const data = await statementService.noteStatement(id)
+      
+      // Обновляем локальное состояние если это текущая заявка
+      if (statement.value && statement.value.id === id) {
+        statement.value.is_called = true
+      }
+      
       return data
     } catch (error) {
       console.error(error)

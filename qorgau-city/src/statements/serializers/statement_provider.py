@@ -60,6 +60,8 @@ class StatementProviderSerializer(serializers.ModelSerializer):
 
             # Create chat room with local chat API (no JWT token needed)
             try:
+                print(f'Creating chat room for statement {statement.id}, statement author: {statement.author.phone}, provider: {provider.phone}')
+                
                 chat_room_id = create_statement_chat_room(
                     phone_1=statement.author.phone,
                     phone_2=provider.phone,
@@ -71,11 +73,19 @@ class StatementProviderSerializer(serializers.ModelSerializer):
                     statement_id=statement.id
                 )
 
+                print(f'Chat room created with ID: {chat_room_id}')
+                
                 if chat_room_id:
                     statement_provider.chat_room_id = chat_room_id
                     statement_provider.save()
+                    print(f'Statement provider updated with chat_room_id: {chat_room_id}')
+                else:
+                    print('Chat room ID is None, not updating statement provider')
+                    
             except Exception as e:
                 print(f'Failed to create chat room: {e}')
+                import traceback
+                traceback.print_exc()
                 # Don't fail the entire operation if chat room creation fails
 
         return statement_provider

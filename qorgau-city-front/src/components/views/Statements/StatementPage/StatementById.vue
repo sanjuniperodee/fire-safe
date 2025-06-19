@@ -23,6 +23,9 @@ const goToPage = (route: string) => {
 const noteStatement = async (cardId: number) => {
   try {
     const data = await statementStore.noteStatement(cardId)
+    
+    // Обновляем данные о заявке, чтобы поле is_called обновилось
+    await statementStore.getStatementById(cardId)
    
     goToPage('Chat')
    

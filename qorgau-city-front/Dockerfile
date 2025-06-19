@@ -13,8 +13,8 @@ RUN yarn install --legacy-peer-deps
 # Copy source code
 COPY . .
 
-# Set environment variables for build - используем относительные URL
-ENV VITE_BACKEND_URL=""
+# Set environment variables for build
+ENV VITE_BACKEND_URL="http://localhost:2999"
 ENV VITE_API_BASE_URL="/api/v1"
 ENV VITE_WEBSOCKET_URL="/ws"
 
