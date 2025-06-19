@@ -4,7 +4,7 @@ import type { ChatLoginValidator, ChatRooms, ChatRoomType, Message, SendMessage,
 import { useChatStore } from '@stores/ChatStore'
 
 // Используем локальный API вместо внешнего
-const SOCKET_URL = `ws://localhost:2998`;
+const SOCKET_URL = `ws://http://165.22.63.97:2998`;
 new Map();
 // const MAX_CONNECTIONS_PER_INTERVAL = 2;
 // const INTERVAL_MS = 600; // 1 минута
@@ -263,4 +263,4 @@ class ChatWebSocketService {
 
 
 
-export const chatWebSocketService = new ChatWebSocketService('http://localhost:2999');
+export const chatWebSocketService = new ChatWebSocketService('http://http://165.22.63.97:2999');
