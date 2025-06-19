@@ -163,11 +163,13 @@ services:
     hostname: "frontend"
     restart: on-failure
     ports:
-      - "87:80"
+      - "5173:5173"
     networks:
       - backend
     depends_on:
       - app_backend
+    volumes:
+      - ../qorgau-city-front:/app
 
 volumes:
   postgres_data:

@@ -1,35 +1,20 @@
-# Build stage
-FROM node:18-alpine as build-stage
+# Базовый образ Node.js
+FROM node:18-alpine
 
+# Установим рабочую директорию
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Копируем package.json и yarn.lock
+COPY package.json yarn.lock ./
 
-# Install dependencies
-RUN npm install --legacy-peer-deps
+# Устанавливаем зависимости
+RUN yarn install
 
-# Copy source code
+# Копируем остальной код
 COPY . .
 
-# Set environment variables for build
-ENV VITE_API_BASE_URL=http://localhost:2999/api/v1
-ENV VITE_WEBSOCKET_URL=ws://localhost:2998
+# Открываем порт Vite (по умолчанию 5173)
+EXPOSE 5173
 
-# Build the application
-RUN npm run build
-
-# Production stage
-FROM nginx:alpine as production-stage
-
-# Copy built app from build stage
-COPY --from=build-stage /app/dist /usr/share/nginx/html
-
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
-
-# Expose port 80
-EXPOSE 80
-
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"] 
+# Команда по умолчанию — запуск dev-сервера Vite
+CMD ["yarn", "dev", "--host"]
