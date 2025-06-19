@@ -72,9 +72,22 @@ class StatementProviderSerializer(serializers.ModelSerializer):
             try:
                 print(f'Creating chat room for statement {statement.id}, statement author: {statement.author.phone}, provider: {provider.phone}')
                 
-                # Ensure we have valid names
-                author_name = statement.author.first_name or statement.author.phone
-                provider_name = provider.first_name or provider.phone
+                # Ensure we have valid names with multiple fallbacks
+                author_name = (
+                    statement.author.first_name 
+                    or statement.author.last_name 
+                    or statement.author.organization_name 
+                    or statement.author.phone 
+                    or f"User-{statement.author.id}"
+                )
+                
+                provider_name = (
+                    provider.first_name 
+                    or provider.last_name 
+                    or provider.organization_name 
+                    or provider.phone 
+                    or f"Provider-{provider.id}"
+                )
                 
                 print(f'Using author_name: "{author_name}", provider_name: "{provider_name}"')
                 

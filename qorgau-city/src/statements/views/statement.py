@@ -523,13 +523,29 @@ class StatementViewSet(viewsets.ModelViewSet):
             for sp in broken_responses:
                 try:
                     # Try to create chat room for this response
+                    author_name = (
+                        sp.statement.author.first_name 
+                        or sp.statement.author.last_name 
+                        or sp.statement.author.organization_name 
+                        or sp.statement.author.phone 
+                        or f"User-{sp.statement.author.id}"
+                    )
+                    
+                    provider_name = (
+                        sp.provider.first_name 
+                        or sp.provider.last_name 
+                        or sp.provider.organization_name 
+                        or sp.provider.phone 
+                        or f"Provider-{sp.provider.id}"
+                    )
+                    
                     chat_room_id = create_statement_chat_room(
                         phone_1=sp.statement.author.phone,
                         phone_2=sp.provider.phone,
                         categories=list(sp.statement.categories.values_list('id', flat=True)),
                         location=sp.statement.location,
-                        author_name=sp.statement.author.first_name or sp.statement.author.phone,
-                        provider_name=sp.provider.first_name or sp.provider.phone,
+                        author_name=author_name,
+                        provider_name=provider_name,
                         statement_provider_id=sp.id,
                         statement_id=sp.statement.id
                     )

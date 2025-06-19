@@ -60,9 +60,24 @@ def create_statement_chat_room(
                 pass
         
         # Создать комнату чата
-        # Ensure we have valid names
-        final_author_name = author_name or (initiator.first_name if initiator.first_name else initiator.phone)
-        final_provider_name = provider_name or (receiver.first_name if receiver and receiver.first_name else (receiver.phone if receiver else 'Unknown Provider'))
+        # Ensure we have valid names with multiple fallbacks
+        final_author_name = (
+            author_name 
+            or (initiator.first_name if initiator.first_name else None)
+            or (initiator.last_name if initiator.last_name else None)
+            or (initiator.organization_name if hasattr(initiator, 'organization_name') and initiator.organization_name else None)
+            or initiator.phone 
+            or f"User-{initiator.id}"
+        )
+        
+        final_provider_name = (
+            provider_name 
+            or (receiver.first_name if receiver and receiver.first_name else None)
+            or (receiver.last_name if receiver and receiver.last_name else None)
+            or (receiver.organization_name if receiver and hasattr(receiver, 'organization_name') and receiver.organization_name else None)
+            or (receiver.phone if receiver else None)
+            or f"Provider-{receiver.id if receiver else 'Unknown'}"
+        )
         
         logger.info(f"Creating chat room with author_name='{final_author_name}', provider_name='{final_provider_name}'")
         
