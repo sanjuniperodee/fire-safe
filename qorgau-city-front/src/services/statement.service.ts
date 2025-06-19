@@ -62,7 +62,7 @@ class StatementService {
   async noteStatement(id: number) {
     const { data } = await axios.post(
       `${this.baseUrl}/api/v1/statements/response/call/${id}/`,
-      {statement: id},
+      {}, // Пустое тело запроса, так как statement_id передается в URL, а provider автоматически добавляется на backend
       {
         headers: {
           Authorization: 'Bearer ' + this.token,

@@ -222,6 +222,7 @@ class StatementViewSet(viewsets.ModelViewSet):
             # Combine the statement_id from the URL with the request data
             data = request.data.copy()
             data['statement'] = statement_id
+            data['provider'] = request.user.id  # Автоматически добавляем текущего пользователя как провайдера
 
             serializer = self.get_serializer(data=data)
             if serializer.is_valid():
