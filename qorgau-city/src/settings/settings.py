@@ -198,8 +198,9 @@ AWS_S3_FILE_OVERWRITE = False   # True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-MEDIA_URL = f'{MINIO_ENDPOINT}/media/'
 MINIO_PUBLIC_ENDPOINT = os.getenv("MINIO_PUBLIC_ENDPOINT")
+# Используем публичный endpoint для MEDIA_URL, если он задан, иначе внутренний
+MEDIA_URL = f'{MINIO_PUBLIC_ENDPOINT or MINIO_ENDPOINT}/isec/' if MINIO_PUBLIC_ENDPOINT or MINIO_ENDPOINT else '/media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
