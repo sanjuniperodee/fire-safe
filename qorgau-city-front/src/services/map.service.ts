@@ -62,4 +62,4 @@ class MapService {
   }
 }
 
-export const mapService = new MapService(import.meta.env.VITE_BACKEND_URL || 'http://localhost:2999')
+export const mapService = new MapService(import.meta.env.VITE_BACKEND_URL)

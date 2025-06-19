@@ -24,10 +24,9 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:2999',
+        target: import.meta.env.VITE_BACKEND_URL,
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },
