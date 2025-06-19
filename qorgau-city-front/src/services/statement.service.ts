@@ -165,4 +165,4 @@ class StatementService {
   }
 }
 
-export const statementService = new StatementService(import.meta.env.VITE_BACKEND_URL)
+export const statementService = new StatementService('')

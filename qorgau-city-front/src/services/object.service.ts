@@ -309,4 +309,4 @@ class ObjectService {
   }
 }
 
-export const objectService = new ObjectService(import.meta.env.VITE_BACKEND_URL)
+export const objectService = new ObjectService('')
