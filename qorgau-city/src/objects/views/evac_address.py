@@ -50,7 +50,9 @@ class EvacAddressViewSet(
 
             default_storage.save(object_name, file_obj)
 
-            file_path = f"{settings.AWS_S3_ENDPOINT_URL}/isec/{object_name}"
+            # Используем публичный endpoint для URL файла
+            public_endpoint = getattr(settings, 'MINIO_PUBLIC_ENDPOINT', None) or settings.AWS_S3_ENDPOINT_URL
+            file_path = f"{public_endpoint}/isec/{object_name}"
             serializer.validated_data['file_path'] = file_path
             serializer.validated_data['qrcode_url'] = f"{settings.QR_GENERATOR_LINK}&data={file_path}"
 

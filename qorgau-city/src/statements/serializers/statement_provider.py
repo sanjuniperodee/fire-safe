@@ -24,11 +24,7 @@ class StatementProviderSerializer(serializers.ModelSerializer):
             'provider',
             'chat_room_id',
             'status',
-            'is_archived',
-            'note_text',
-            'is_completed_request',
-            'estimated_cost',
-            'actual_cost',
+            'archive_date',
             'created_at',
             'updated_at'
         ]
